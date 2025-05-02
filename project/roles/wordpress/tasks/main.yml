@@ -1,0 +1,53 @@
+---
+- name: Check if Apache is installed
+  command: rpm -q httpd
+  register: apache_check
+  ignore_errors: yes
+  become: yes
+
+- name: Install Apache if not already installed
+  yum:
+    name: httpd
+    state: present
+  when: apache_check.rc != 0
+  become: yes
+
+- name: Ensure Apache is enabled and running
+  service:
+    name: httpd
+    state: started
+    enabled: yes
+  become: yes
+
+- name: Check if PHP is installed
+  command: rpm -q php
+  register: php_check
+  ignore_errors: yes
+  become: yes
+
+- name: Skip PHP installation if already installed
+  debug:
+    msg: "PHP is already installed, skipping installation"
+  when: php_check.rc == 0
+
+- name: Install PHP if not already installed
+  shell: yum install -y php
+  when: php_check.rc != 0
+  become: yes
+
+- name: Check if php-mysqlnd is installed
+  command: rpm -q php-mysqlnd
+  register: mysqlnd_check
+  ignore_errors: yes
+  become: yes
+
+- name: Skip php-mysqlnd installation if already installed
+  debug:
+    msg: "php-mysqlnd already installed, skipping"
+  when: mysqlnd_check.rc == 0
+
+- name: Install php-mysqlnd only if not installed
+  shell: yum install -y php-mysqlnd
+  when: mysqlnd_check.rc != 0
+  become: yes
+
